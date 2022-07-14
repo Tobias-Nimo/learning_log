@@ -1,7 +1,8 @@
 # learning_log
-Python Crash Course Djando App
+*Python Crash Course Djando App*
+---
 
-Spec:
+**Spec**
 We’ll write a web app called Learning Log that allows users to
 log the topics they’re interested in and to make journal entries as	
 they learn about each topic. The Learning Log home page will
