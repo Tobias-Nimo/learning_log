@@ -1,5 +1,4 @@
 # learning_log
----
 
 **Spec**:
 
