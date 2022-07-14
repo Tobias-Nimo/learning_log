@@ -1,5 +1,5 @@
 # learning_log
-*Python Crash Course Djando App*
+*Python Crash Course Django App*
 ---
 
 **Spec**
