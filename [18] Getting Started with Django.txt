@@ -1,0 +1,553 @@
+					+---------------------------------------------+
+					|                                             |
+					|   Chapter 18: Getting Started with Django   |
+					|                                             |
+					+---------------------------------------------+
+
+*** Setting Up a Project ***
+
+- Writing a Spec
+
+	We’ll write a web app called Learning Log that allows users to
+	log the topics they’re interested in and to make journal entries as	
+	they learn about each topic. The Learning Log home page will
+	describe the site and invite users to either register or log in. Once
+	logged in, a user can create new topics, add new entries, and read
+	and edit existing entries.
+
+- Creating a Virtual Environment
+
+	1. create directory ´learning_log´
+	2. swich to that directory in a terminal and enter: python -m venv ll_env
+
+- Activating the Virtual Environment
+
+	In a terminal swich to the directory and enter: ll_env\Scripts\activate
+	To stop using a virtual environment, enter: deactivate
+
+- Installing Django
+
+	Once the virtual environment is activated, enter: 
+	(ll_env) ...\learning_log> pip install django
+
+- Creating a Project in Django
+
+	Without leaving the active virtual environment enter
+	the following commands to create a new project: 
+	(ll_env) ...\learning_log> django-admin startproject learning_log .
+
+- Creating the Database
+	
+	Django stores most of the information for a project in a database, so next
+	we need to create a database that Django can work with. 
+	Enter the following command: (for the 1st time !)
+	(ll_env) ...\learning_log> python manage.py migrate
+
+- Viewing the Project
+	
+	Let’s make sure that Django has set up the project properly. Enter the
+	runserver command as follows to view the project in its current state:
+
+	(ll_env) ...\learning_log> python manage.py runserver
+
+	Open a web browser and enter the URL http://localhost:8000/
+	You should see ... the development server !
+------------------------------------------------------------------------------------------
+
+*** Starting an App ***
+
+A Django project is organized as a group of individual apps
+that work together to make the project work as a whole.
+
+You should leave the development server running in the terminal
+window you opened earlier ...
+
+1. Open a new terminal window, and navigate to the directory that contains manage.py.
+2. Activate the virtual environment, and then run the startapp command: 
+   (ll_env) ...\learning_log> python manage.py startapp learning_logs
+
+The command startapp appname tells Django to create the infrastructure
+needed to build an app. When you look in the project directory now, you’ll
+see a new folder called learning_logs.
+
+Open that folder to see what Django, you´ll see these files:
+models.py
+admin.py
+views.py.
+
+We’ll use models.py to define the data we want to manage in our app.
+We’ll look at admin.py and views.py a little later.
+
+- Defining Models
+
+	A model tells Django how to work with the data that will be stored in the app.
+	Code-wise, a model is just a class.
+
+	Each user will need to create a number of topics in their learning log.
+
+	Open the file models.py:
+	
+	from django.db import models
+	# Create your models here.
+	
+	class Topic(models.Model):
+		"""A topic the user is learning about."""
+		text = models.CharField(max_length=200)
+		date_added = models.DateTimeField(auto_now_add=True)
+	
+		def __str__(self):
+			"""Return a string representation of the model."""
+			return self.text
+
+- Activating Models
+	
+	To use our models, we have to tell Django to include 
+	our app in the overall project. 
+
+	1. Open settings.py (in the learning_log/learning_log directory);
+	   you’ll see a section that tells Django which apps are
+	   installed and work together in the project.
+	
+	2. Add our app ´learning_logs´ to this list by modifying INSTALLED_APPS.
+	
+	Next, we need to tell Django to modify the database so it can store
+	information related to the model Topic. 
+
+	3. From the terminal, run the following command: 	
+	   (ll_env) ...\learning_log> python manage.py makemigrations learning_logs
+
+	The command makemigrations tells Django to figure out how to modify
+	the database so it can store the data associated with any new models we’ve
+	defined.
+
+	4. Now we’ll apply this migration and have Django modify the database for us:
+	   (ll_env) ...\learning_log> python manage.py migrate
+
+
+- The Django Admin Site
+
+	Django makes it easy to work with your models through the admin site.
+	
+	In this section, we’ll set up the admin site and use it to add some
+	topics through the Topic model.
+
+	* Setting Up a Superuser
+		
+		Django allows you to create a superuser, a user who has all
+		privileges available on the site. 
+		A user’s privileges control the actions that user can take.
+		
+		To create a superuser in Django, enter the following command and
+		respond to the prompts:
+		(ll_env) ...\learning_log> python manage.py createsuperuser
+		username: ll_admin
+		password: vienna
+
+
+	* Registering a Model with the Admin Site
+		
+		Django includes some models in the admin site automatically,
+		such as User and Group, but the models we create need to be added manually.
+
+		When we started the learning_logs app, Django created an admin.py file	
+		in the same directory as models.py. 
+
+		1. Open the admin.py file.
+		2. To register the model ´Topic´ with the admin site, enter the following:
+		
+		from django.contrib import admin
+		# Register your models here.
+
+		from django.contrib import admin
+		from .models import Topic
+		admin.site.register(Topic)
+
+	* Adding Topics
+
+		Now that Topic has been registered with the admin site,
+		let’s add our first topic.
+		
+		1. Go to http://localhost: 8000/admin/
+		2. Click Topics to go to the Topics page
+		3. Click Add Topic
+		4. Enter Chess in the first box and click Save. 
+		
+		Let’s create a second topic: Rock Climbing
+
+- Defining the Entry Model
+
+
+	For a user to record what they’ve been learning about chess and rock climbing,
+	we need to define a model for the kinds of entries users can make in
+	their learning logs.
+
+	Each entry needs to be associated with a particular topic. This relationship is 	called a many-to-one relationship.
+
+	Here’s the code for the ´Entry´ model. Place it in your models.py file:
+
+	class Entry(models.Model):
+		"""Something specific learned about a topic."""
+		topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+		text = models.TextField()
+		date_added = models.DateTimeField(auto_now_add=True)
+
+		class Meta:
+			verbose_name_plural = 'entries'
+
+		def __str__(self):
+			"""Return a string representation of the model."""
+			return f"{self.text[:50]}..."
+	
+
+- Migrating the Entry Model
+
+	Because we’ve added a new model, we need to migrate the database again.
+	This process will become quite familiar:
+	1. you modify models.py
+	2. run the command: python manage.py makemigrations app_name
+	3. run the command: python manage.py migrate.
+
+	So we enter the following commands in the terminal ...
+	(ll_env) ...\learning_log> python manage.py makemigrations learning_logs
+	(ll_env) ...\learning_log> python manage.py migrate
+
+	A new migration called 0002_entry.py is generated, which tells Django
+	how to modify the database to store information related to the model ´Entry´.
+
+
+- Registering Entry with the Admin Site
+	
+	We also need to register the Entry model.
+	Here’s what admin.py should look like now:
+
+	from django.contrib import admin
+	from .models import Topic, Entry
+	admin.site.register(Topic)
+	admin.site.register(Entry)
+
+- The Django Shell
+	
+	With some data entered, we can examine that data programmatically
+	through an interactive terminal session. This interactive environment is
+	called the Django shell, and it’s a great environment for testing and
+	troubleshooting your project.
+
+	Here’s an example of an interactive shell session:
+
+	(ll_env) ...\learning_log> python manage.py shell
+	>>> from learning_logs.models import Topic
+	>>> Topic.objects.all()
+	<QuerySet [<Topic: Chess>, <Topic: Rock Climbing>]>
+
+
+	>>> topics = Topic.objects.all()
+	>>> for topic in topics:
+			print(topic.id, topic)
+	...
+	1 Chess
+	2 Rock Climbing
+
+	>>> t = Topic.objects.get(id=1)
+	>>> t.text
+	'Chess'
+	>>> t.date_added
+	datetime.datetime(2019, 2, 19, 1, 55, 31, 98500, tzinfo=<UTC>)
+
+	>>>t.entry_set.all()
+	<QuerySet [<Entry: The opening is the first part of the game, roughly...>,
+	<Entry:
+	In the opening phase of the game, it's important t...>]>
+
+
+	To exit a shell session, press ctrl-Z and then press enter !
+------------------------------------------------------------------------------------------
+
+*** Making Pages: The Learning Log Home Page ***
+
+Making web pages with Django consists of three stages:
+1. defining URLs,
+2. writing views, 
+3. and writing templates.
+You can do these in any order.
+
+For now, the home page will display only a title and a brief description ...
+
+- Mapping a URL
+
+	The home page URL is first: it’s the base URL people use to access the project.
+
+	At the moment the base URL, http://localhost:8000/, returns the default
+	Django site that lets us know the project was set up correctly.
+
+ 	We’ll change this by mapping the base URL to Learning Log’s home page.
+	In the main learning_log project folder, open the file urls.py.
+	Here’s the code you should write:
+
+	from django.contrib import admin
+	from django.urls import path, include
+	
+	urlpatterns = [
+		path('admin/', admin.site.urls),
+		path('', include('learning_logs.urls')),
+	]
+
+	We’ve added a line to include the module learning_logs.urls.
+	
+	The default urls.py is in the learning_log folder; now we need to make a
+	second urls.py file in the learning_logs folder. Create a new Python file and
+	save it as urls.py in learning_logs, and enter this code into it:
+	
+	"""Defines URL patterns for learning_logs."""
+	from django.urls import path
+	from . import views
+	
+	app_name = 'learning_logs'
+	urlpatterns = [
+		# Home page
+		path('', views.index, name='index')
+	]
+
+
+- Writing a View
+
+	A view function takes in information from a request, prepares the data
+	needed to generate a page, and then sends the data back to the browser,
+	often by using a template that defines what the page will look like.
+
+	Modify the file views.py in learning_logs:
+	
+	from django.shortcuts import render
+	
+	def index(request):
+		"""The home page for Learning Log."""
+		return render(request, 'learning_logs/index.html')
+
+	The render() function, which renders the response based on the
+	data provided by views.
+
+
+	When a URL request matches the pattern we just defined, Django looks
+	for a function called index() in the views.py file. Django then passes the
+	views.py request object to this view function. In this case, we don’t need
+	to process any data for the page, so the only code in the function is a call
+	to render().
+
+	The render() function here passes two arguments—the original request
+	object and a template it can use to build the page. Let’s write this template.
+
+- Writing a Template
+
+	The template defines what the page should look like, and Django fills in
+	the relevant data each time the page is requested. A template allows you to
+	access any data provided by the view. Because our view for the home page
+	provided no data, this template is fairly simple.
+
+	1. Inside the learning_logs folder, make a new folder called templates. Inside
+	   the templates folder, make another folder called learning_logs. Inside the inner 	   learning_logs folder, make a new file called index.html.
+
+	2. Enter the following code into that file:
+
+	<p>Learning Log</p>
+	<p>Learning Log helps you keep track of your learning, for any topic you're
+	learning about.</p>	
+------------------------------------------------------------------------------------------
+
+*** Building Additional Pages ***
+	
+We’ll build two pages that display data:
+
+. a page that lists all topics 
+. and a page that shows all the entries for a particular topic. 
+
+For each page, we’ll specify a URL pattern, write a view function,
+and write a template. 
+
+But before we do this, we’ll create a base template that all templates
+in the project can inherit from.
+
+- Template Inheritance
+
+	When building a website, some elements will always need to be repeated on each page.
+
+	* The Parent Template
+	
+		We’ll create a template called base.html in the same directory as index.html.
+		This file will contain elements common to all pages; every other template
+		will inherit from base.html.
+		
+		<p>
+		 <a href="{% url 'learning_logs:index' %}">Learning Log</a>
+		</p>
+ 
+		{% block content %}{% endblock content %}
+
+	* The Child Template
+		
+		Now we need to rewrite index.html to inherit from base.html.
+		Replace the code in index.html with this one:
+		
+		{% extends "learning_logs/base.html" %}
+		{% block content %}
+		
+		<p>Learning Log helps you keep track of your learning, for any topic you're			learning about.</p>
+		
+		{% endblock content %}
+
+
+	Now that we have an efficient approach to building pages, we can focus on
+	our next two pages.
+
+- The Topics Page
+
+	The topics page will show all topics that users have created,
+	and it’s the first page that will involve working with data.
+
+	* The Topics URL Pattern
+
+		First, we define the URL for the topics page.
+
+		We’ll use the word ´topics´, so the URL http://localhost:8000/topics/
+		will return this page. Here’s how we modify learning_logs/urls.py:
+
+		"""Defines URL patterns for learning_logs."""
+
+		from django.urls import path
+		from . import views
+
+		app_name = 'learning_logs'
+		urlpatterns = [
+			# Home page
+			path('', views.index, name='index'),
+			# Page that shows all topics.
+			path('topics/', views.topics, name='topics')
+		]
+
+	* The Topics View
+
+		The topics() function needs to retrieve some data from the database and
+		send it to the template. Here’s what we need to add to views.py:
+		
+		from django.shortcuts import render
+		from .models import Topic
+
+		def index(request):
+			--snip--
+
+		def topics(request):
+			"""Show all topics."""
+			topics = Topic.objects.order_by('date_added')
+			context = {'topics': topics}
+			return render(request, 'learning_logs/topics.html', context)
+
+	* The Topics Template
+
+		The template for the topics page receives the context dictionary, so the 			template can use the data that topics() provides. 
+
+		Make a file called topics.html in the same directory as index.html:
+
+		{% extends "learning_logs/base.html" %}
+
+		{% block content %}
+
+		  <p>Topics</p>
+
+		  <ul>
+		    {% for topic in topics %}
+		      <li>{{ topic }}</li>
+		    {% empty %}
+		      <li>No topics have been added yet.</li>
+		    {% endfor %}
+		  </ul>
+
+		{% endblock content %}
+
+	Now we need to modify the base template to include a link to the topics
+	page. Add the following code to base.html:
+
+	<p>
+	  <a href="{% url 'learning_logs:index' %}">Learning Log</a> -
+	  <a href="{% url 'learning_logs:topics' %}">Topics</a>	
+	</p>
+	
+	{% block content %}{% endblock content %}
+
+- Individual Topic Pages
+	
+	Next, we need to create a page that can focus on a single topic, showing the
+	topic name and all the entries for that topic. 
+
+	We’ll need to define a new URL pattern, write a view, and create a template.
+
+	We’ll also modify the topics page so each item in the bulleted list links to its 	corresponding topic page.
+
+	* The Topic URL Pattern
+
+		The URL pattern for the topic page is a little different than the prior URL
+		patterns because it will use the topic’s id attribute to indicate which topic
+		was requested. 
+
+		Here’s a pattern to match this URL, which you should place in 
+		learning_logs/urls.py:
+
+		--snip--
+		urlpatterns = [
+			--snip--
+			# Detail page for a single topic.
+			path('topics/<int:topic_id>/', views.topic, name='topic'),
+		]
+
+	* The Topic View
+
+		The topic() function needs to get the topic and all associated entries from
+		the database, as shown here:
+
+		--snip--
+		def topic(request, topic_id):
+			"""Show a single topic and all its entries."""
+			topic = Topic.objects.get(id=topic_id)
+			entries = topic.entry_set.order_by('-date_added')
+			context = {'topic': topic, 'entries': entries}
+			return render(request, 'learning_logs/topic.html', context)
+
+
+	* The Topic Template
+
+		The topic.html template needs to display the name of the topic and the entries. 		We also need to inform the user if no entries have been made yet for this topic.
+
+		{% extends 'learning_logs/base.html' %}
+		{% block content %}
+
+		<p>Topic: {{ topic }}</p>
+
+		<p>Entries:</p>
+		<ul>
+		{% for entry in entries %}
+		  <li>
+			<p>{{ entry.date_added|date:'M d, Y H:i' }}</p>
+			<p>{{ entry.text|linebreaks }}</p>
+		  </li>
+		{% empty %}
+		  <li>There are no entries for this topic yet.</li>
+		{% endfor %}
+		</ul>
+
+		{% endblock content %}
+
+
+	* Links from the Topics Page
+
+		Before we look at the topic page in a browser, we need to modify the topics
+		template so each topic links to the appropriate page. Modify topics.html:
+		
+		--snip--
+		{% for topic in topics %}
+		  <li>
+			<a href="{% url 'learning_logs:topic' topic.id %}">{{ topic }}</a>
+		  </li>
+		{% empty %}
+		--snip--
+
+
+		Now each topic in the list of topics is a link to a topic page,
+		such as http://localhost:8000/topics/1/.
+------------------------------------------------------------------------------------------
